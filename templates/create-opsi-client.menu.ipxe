@@ -37,7 +37,6 @@ echo Auto-Install Group: ${selected-product-group}
 
 # Send request to API
 imgfetch {{ external_address.scheme }}://${username:uristring}:${password:uristring}@{{ external_address.without_scheme }}boot/opsi-client-setup/create-client?mac=${mac}&fqdn=${hostname}.${domain}&system-uuid=${uuid}&netboot-id=${selected-netboot}&product-group-id=${selected-product-group} || goto error-create-client
-echo ${username:uristring}:${password:uristring}
 echo Client successfully created. Press any key to boot to OPSI
 prompt
 
