@@ -1,0 +1,4 @@
+#!ipxe
+echo OPSI-Client with {{ mac }}, known as {{ fqdn }} already exists
+echo Delete client manually and try again
+exit 1

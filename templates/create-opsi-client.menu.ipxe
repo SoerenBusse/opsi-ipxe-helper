@@ -1,0 +1,59 @@
+#!ipxe
+set hostname {{ hostname }}
+set domain {{ domain }}
+
+:client-info
+form Create new OPSI Client
+item --gap          MAC: ${mac}
+item --gap          System UUID: ${uuid}
+item hostname       Hostname
+item domain         Domain
+present
+
+goto select-netboot
+
+:select-netboot
+menu Select netboot product for ${mac}
+{% for id in netboot_product_ids %}
+item {{ id }}   {{ id }}
+{% endfor %}
+choose selected-netboot || goto error-create-client
+goto select-productgroup
+
+:select-productgroup
+menu Select product group for initial installation for ${mac}
+{% for id in product_group_ids %}
+item {{ id }}   {{ id }}
+{% endfor %}
+choose selected-product-group || goto error-create-client
+goto create-client
+
+:create-client
+echo MAC: ${mac}
+echo UUID: ${uuid}
+echo FQDN: ${hostname}.${domain}
+echo Netboot: ${selected-netboot}
+echo Auto-Install Group: ${selected-product-group}
+
+# Send request to API
+imgfetch {{ external_address.scheme }}://${username:uristring}:${password:uristring}@{{ external_address.without_scheme }}boot/opsi-client-setup/create-client?mac=${mac}&fqdn=${hostname}.${domain}&system-uuid=${uuid}&netboot-id=${selected-netboot}&product-group-id=${selected-product-group} || goto error-create-client
+echo ${username:uristring}:${password:uristring}
+echo Client successfully created. Press any key to boot to OPSI
+prompt
+
+# Boot OPSI Local Boot Client
+set net0/next-server {{ netboot_efi_url.host }}
+set net0/filename {{ netboot_efi_url.path }}
+
+chain {{ netboot_efi_url }} || goto error-create-client
+exit 0
+
+:error-create-client
+echo Error while creating client
+prompt
+exit 1
+
+:error-boot-client
+echo Error while booting client
+prompt
+exit 1

@@ -1,0 +1,19 @@
+[Unit]
+Description=OPSI IPXE helper service
+After=network.target
+After=opsiconfd.service
+Requires=opsiconfd.service
+
+[Service]
+Type=simple
+ExecStart=/opt/opsi-ipxe-helper/.venv/bin/uvicorn --app-dir /opt/opsi-ipxe-helper/app main:app --port 8080 --host 0.0.0.0
+User=opsi-ipxe-helper
+Group=opsi-ipxe-helper
+WorkingDirectory=/opt/opsi-ipxe-helper
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=on-failure
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

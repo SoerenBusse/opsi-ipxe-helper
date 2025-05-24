@@ -1,0 +1,12 @@
+#!ipxe
+menu iPXE Error
+item --gap -- -------------------- Error Menu --------------------
+item --gap -- An error has occurred.
+item --gap -- {{ error_message }}
+item --gap -- Press OK to return to the main menu.
+item ok OK
+choose selected || goto ok
+goto ok
+
+:ok
+echo Returning to the main menu...

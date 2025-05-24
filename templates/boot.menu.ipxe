@@ -1,0 +1,73 @@
+#!ipxe
+# Inspired by https://github.com/mbirth/ipxe-config/blob/master/menu.example.ipxe
+
+set menu-timeout 30000
+
+:main
+menu Boot menu for ${mac}
+item --gap --           ---------------------------------- OPSI ---------------------------------------
+item opsi-boot-image    Boot to official opsi-boot-image
+item opsi-create-client Create and preconfigure OPSI client (Login)
+
+{% if tool_entries %}
+item --gap --           ---------------------------------- Tools ---------------------------------------
+{% for entry in tool_entries %}
+item {{ entry.key }}    {{entry.description}} {% if entry.require_login %} (Login) {% endif %}
+{% endfor %}
+{% endif %}
+
+item --gap --           ---------------------------------- Other ---------------------------------------
+item shell              Start iPXE shell
+item reboot             Reboot computer
+item
+item exit               Continue normal boot process
+choose --timeout ${menu-timeout} --default opsi-boot-image selected || goto main
+set menu-timeout 0
+goto ${selected}
+
+:opsi-create-client
+login
+chain {{ external_address.scheme }}://${username:uristring}:${password:uristring}@{{ external_address.without_scheme }}boot/opsi-client-setup?mac=${mac} || goto error
+goto main
+
+:opsi-boot-image
+set net0/next-server {{ netboot_efi_url.host }}
+set net0/filename {{ netboot_efi_url.path }}
+
+chain --autofree {{ netboot_efi_url }} || goto error
+goto main
+
+{% for entry in tool_entries %}
+:{{ entry.key }}
+echo Loading {{ entry.key }} - {{ entry.description }}
+
+# Handling Login
+{% if entry.require_login %}
+login
+set next-url {{ entry.url.scheme }}://${username:uristring}:${password:uristring}@{{ entry.url.without_scheme }}
+{% else %}
+set next-url {{ entry.url }}
+{% endif %}
+
+# Load next url
+chain {% if entry.replace %} --replace {% endif %} ${next-url} || goto error
+{% endfor %}
+goto main
+
+:shell
+shell
+goto main
+
+:reboot
+echo Rebooting
+reboot
+exit 0
+
+:exit
+echo Bye Bye
+exit 0
+
+:error
+echo -n An error occured. Please press any key to go back to main menu
+prompt
+goto main

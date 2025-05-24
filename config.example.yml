@@ -1,0 +1,41 @@
+opsi:
+  # rpc url of the opsi config server
+  rpc_url: "https://<SERVER>:4447/rpc"
+
+  # username of the api user
+  username: opsiapi
+
+  # password of the api user
+  password: <PASSWORD>
+
+  # the depot the client will be assigned to
+  depot: opsi-server-1.<DOMAIN>
+
+  # domain, which will be automatically added after the hostname during client creation
+  domain: <FQDN>
+
+  # path to opsi netboo efi
+  netboot_efi_url: tftp://<SERVER>/opsi/opsi-linux-bootimage/loader/shimx64.efi.signed
+ipxe:
+  # External address of this server
+  # This address will be inserted into the ipxe menu files to reach this server
+  external_address: "http://<EXTERNAL-IP>:8000"
+
+  # Username and password for menu entries requiring a login
+  username: pxe
+  password: pxeb00t
+
+  # Custom entries which will be added to the menu
+  tools:
+    entries:
+      - key: netbootxyz
+        description: Boot to NetBoot.xyz
+        url: http://boot.netboot.xyz
+        replace: false
+        require_login: false
+directories:
+  static:
+    # Path to a directory serving static files like custom .efi files to boot (e.g. memtest, ...)
+    public: static/public
+
+
