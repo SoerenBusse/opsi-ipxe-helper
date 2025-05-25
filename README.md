@@ -35,6 +35,7 @@ python3-venv must be installed.
 # Installation
 git clone https://github.com/SoerenBusse/opsi-ipxe-helper.git /opt/opsi-ipxe-helper
 cd /opt/opsi-ipxe-helper
+python3 -m venv .venv
 source .venv/bin/activate
 pip3 install -r requirements.txt
 
