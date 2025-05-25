@@ -22,14 +22,22 @@ An unofficial tool to streamline booting OPSI clients using iPXE, enhanced with 
 - **Static File Server Support**  
   Serve custom EFI files (e.g., memtest) via a built-in static file server.
 
-## Create API user
+![Main Menu](https://github.com/user-attachments/assets/1fe175d0-25bd-45a2-a24e-5c97d65ce543)
+
+
+![Create Client](https://github.com/user-attachments/assets/8b7f7bb3-8c16-4993-af54-9df5e1e6890f)
+
+
+
+# Setup
+## Prepare OPSI Server
+### Create API user
 It is recommended to create a dedicated `opsiapi` user for this tool.  
 Adjust the user permissions as needed in `/etc/opsi/backendManager/acl.conf`.
 ```
 adduser opsiapi --ingroup opsiadmin --no-create-home --shell /usr/sbin/nologin
 ```
-
-### Installation
+## Installation
 python3-venv must be installed.
 ```
 # Installation
