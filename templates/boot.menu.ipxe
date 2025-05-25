@@ -27,10 +27,13 @@ goto ${selected}
 
 :opsi-create-client
 login
-chain {{ external_address.scheme }}://${username:uristring}:${password:uristring}@{{ external_address.without_scheme }}boot/opsi-client-setup?mac=${mac} || goto error
+chain --autofree {{ external_address.scheme }}://${username:uristring}:${password:uristring}@{{ external_address.without_scheme }}boot/opsi-client-setup?mac=${mac} || goto error
 goto main
 
 :opsi-boot-image
+# Free all images to prevent a freeze during boot
+imgfree
+
 set net0/next-server {{ netboot_efi_url.host }}
 set net0/filename {{ netboot_efi_url.path }}
 
@@ -50,7 +53,7 @@ set next-url {{ entry.url }}
 {% endif %}
 
 # Load next url
-chain {% if entry.replace %} --replace {% endif %} ${next-url} || goto error
+chain --autofree {% if entry.replace %} --replace {% endif %} ${next-url} || goto error
 {% endfor %}
 goto main
 

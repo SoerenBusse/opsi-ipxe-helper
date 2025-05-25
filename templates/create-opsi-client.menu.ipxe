@@ -37,14 +37,22 @@ echo Auto-Install Group: ${selected-product-group}
 
 # Send request to API
 imgfetch {{ external_address.scheme }}://${username:uristring}:${password:uristring}@{{ external_address.without_scheme }}boot/opsi-client-setup/create-client?mac=${mac}&fqdn=${hostname}.${domain}&system-uuid=${uuid}&netboot-id=${selected-netboot}&product-group-id=${selected-product-group} || goto error-create-client
+
 echo Client successfully created. Press any key to boot to OPSI
 prompt
+
+echo "Waiting 10 seconds to make sure that pxeconfd created the entry"
+sleep 10
+
+# Free all images
+# If there's still one not freed image, the OPSI installer will freeze will boot...
+imgfree
 
 # Boot OPSI Local Boot Client
 set net0/next-server {{ netboot_efi_url.host }}
 set net0/filename {{ netboot_efi_url.path }}
 
-chain {{ netboot_efi_url }} || goto error-create-client
+chain --autofree {{ netboot_efi_url }} || goto error-create-client
 exit 0
 
 :error-create-client
