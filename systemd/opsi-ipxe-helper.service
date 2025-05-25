@@ -2,7 +2,7 @@
 Description=OPSI IPXE helper service
 After=network.target
 After=opsiconfd.service
-Requires=opsiconfd.service
+Wants=opsiconfd.service
 
 [Service]
 Type=simple
@@ -12,6 +12,7 @@ Group=opsi-ipxe-helper
 WorkingDirectory=/opt/opsi-ipxe-helper
 ExecReload=/bin/kill -s HUP $MAINPID
 Restart=on-failure
+RestartSec=5
 PrivateTmp=true
 ProtectSystem=full
 
