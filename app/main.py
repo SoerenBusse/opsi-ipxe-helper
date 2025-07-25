@@ -14,7 +14,7 @@ from starlette.staticfiles import StaticFiles
 
 from opsiapi import OpsiApi, OpsiException
 from routers import boot, root
-from settings import Settings, StaticDirectoriesSetting
+from settings import Settings
 from utils.utils import render_error_template
 
 logger = logging.getLogger('uvicorn.error')

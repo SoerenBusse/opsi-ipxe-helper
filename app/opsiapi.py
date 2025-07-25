@@ -61,15 +61,11 @@ class OpsiApi(AbstractAsyncContextManager):
 
     @check_session
     async def get_product_group_ids(self) -> List[str]:
-        product_groups = await self._get_product_group_with_filter()
+        result = await self._rpc_request(request("group_getObjects"))
 
-        # Create a set of unique product groups
-        product_group_ids = set()
+        product_groups = [x["id"] for x in result if x["type"] == "ProductGroup"]
 
-        for product_group_association in product_groups:
-            product_group_ids.add(product_group_association["groupId"])
-
-        return list(product_group_ids)
+        return product_groups
 
     @check_session
     async def install_netboot_product(self, product_id: str, client_id: str):
@@ -86,14 +82,14 @@ class OpsiApi(AbstractAsyncContextManager):
     @check_session
     async def install_localboot_product_group(self, product_group_id: str, client_id: str):
         # Get products for a specific product_group
-        product_group_members = await self._get_product_group_with_filter(group_id=product_group_id)
+        product_ids = await self._get_products_from_hierarchy(product_group_id)
 
         # Add all product members of the product group as payload to the setup request
         requested_product_actions = []
-        for member in product_group_members:
+        for product_id in product_ids:
             requested_product_actions.append({
                 "clientId": client_id,
-                "productId": member["objectId"],
+                "productId": product_id,
                 "actionRequest": "setup",
                 "type": "ProductOnClient",
                 "productType": "LocalbootProduct"
@@ -191,7 +187,56 @@ class OpsiApi(AbstractAsyncContextManager):
 
         return result[0]
 
-    async def _get_product_group_with_filter(self, group_id: str = None) -> List[Dict]:
+    async def _get_products_from_hierarchy(self, product_group_id) -> List[str]:
+        # We have to fetch all groups and filter client side, because we cannot get all groups for a specific type
+        # the RPC always requires the ID
+        result = await self._rpc_request(request("group_getObjects"))
+
+        # Build dictionary group -> parent-group
+        group_parent_map = {}
+
+        for group in result:
+            # We're skipping all non product groups
+            if group["type"] != "ProductGroup":
+                continue
+
+            group_parent_map[group["id"]] = group["parentGroupId"]
+
+        groups = []
+        current_search_group = product_group_id
+
+        # We're supporting a max. depth of 10 to avoid any loops and endless processing
+        for i in range(0, 10):
+            if current_search_group not in group_parent_map:
+                raise OpsiException(500, f"Cannot find {current_search_group} product group")
+
+            # Add the current group to our known groups
+            groups.append(current_search_group)
+
+            # Check whether our grop has a parent
+            parent = group_parent_map[current_search_group]
+
+            # We break the loop if we don't have any more parent
+            if parent is None:
+                break
+
+            # Yes we have a parent
+            current_search_group = parent
+
+        # Just to make sure
+        if not groups:
+            raise OpsiException(500, "No product groups found")
+
+        # Get the products from the groups
+        # Products are unique, so we're using a set
+        products = set()
+
+        for group in groups:
+            products.update(await self._get_product_ids_for_group(group_id=group))
+
+        return list(products)
+
+    async def _get_product_ids_for_group(self, group_id: str = None) -> List[str]:
         opsi_filter = {
             "groupType": "ProductGroup"
         }
@@ -204,7 +249,15 @@ class OpsiApi(AbstractAsyncContextManager):
         if not isinstance(result, List):
             raise OpsiException(500, "Result of product groups is not a list")
 
-        return result
+        # Extract product-ids from result
+        ids = []
+        for product in result:
+            if "objectId" not in product:
+                raise OpsiException(500, f"{product} does not contain an id")
+
+            ids.append(product["objectId"])
+
+        return ids
 
     async def _rpc_request(self, rpc_json):
         response = await self._session.post(self._rpc_url, json=rpc_json)
